@@ -1,4 +1,7 @@
 from copy import deepcopy
+from datetime import datetime
+from datetime import date
+import re
 
 try:
     from collections.abc import MutableSequence
@@ -75,7 +78,7 @@ class Argument(object):
                  ignore=False, type=text_type, location=('json', 'values',),
                  choices=(), action='store', help=None, operators=('=',),
                  case_sensitive=True, store_missing=True, trim=False,
-                 nullable=True):
+                 nullable=True, **kwargs):
         self.name = name
         self.default = default
         self.dest = dest
@@ -91,6 +94,8 @@ class Argument(object):
         self.store_missing = store_missing
         self.trim = trim
         self.nullable = nullable
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def __str__(self):
         if len(self.choices) > 5:
@@ -256,6 +261,20 @@ class Argument(object):
 
         if self.action == 'store' or len(results) == 1:
             return results[0], _found
+
+        if hasattr(self, 'pattern') and self.pattern:
+            if not re.match(self.pattern, results):
+                return self.handle_validation_error(ValueError('Pattern is not matched.'), bundle_errors)
+
+        if hasattr(self, 'format') and self.format:
+            if results and self.format in [date, datetime]:
+                try:
+                    results = datetime.strptime(results, r'%Y-%m-%d')
+                except ValueError as e:
+                    return self.handle_validation_error(ValueError(str(e)), e)
+
+                if self.format == date:
+                    results = results.date()
         return results, _found
 
 
