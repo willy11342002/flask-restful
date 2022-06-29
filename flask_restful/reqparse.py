@@ -179,6 +179,7 @@ class Argument(object):
         flask_restful.abort(400, message=msg)
 
     def parse(self, request, bundle_errors=False):
+        request.formData = request.form
         """Parses argument value(s) from the request, converting according to
         the argument's type.
 
