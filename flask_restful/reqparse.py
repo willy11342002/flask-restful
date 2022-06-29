@@ -94,6 +94,7 @@ class Argument(object):
         self.store_missing = store_missing
         self.trim = trim
         self.nullable = nullable
+        self.extend_args = kwargs
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -261,6 +262,14 @@ class Argument(object):
 
         if self.action == 'store' or len(results) == 1:
             return results[0], _found
+
+        if hasattr(self, 'minimum') and self.minimum:
+            if results < self.minimum:
+                return self.handle_validation_error(ValueError(f'Number must large than {self.minimum}.'), bundle_errors)
+
+        if hasattr(self, 'maximum') and self.maximum:
+            if results < self.maximum:
+                return self.handle_validation_error(ValueError(f'Number must less than {self.maximum}.'), bundle_errors)
 
         if hasattr(self, 'pattern') and self.pattern:
             if not re.match(self.pattern, results):
